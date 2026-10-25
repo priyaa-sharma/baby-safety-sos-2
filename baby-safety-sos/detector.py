@@ -1,4 +1,3 @@
-"""Hazard + 'holding' detection: object detector (YOLO) + pose estimator (YOLO-pose)."""
 import os
 import cv2
 import numpy as np

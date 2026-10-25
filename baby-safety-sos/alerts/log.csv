@@ -4,3 +4,6 @@ time,hazard,confidence,status,snapshot
 2026-10-25 00:48:25,test alert - ignore this,0.00,sent via telegram,
 2026-10-25 00:53:16,test alert - ignore this,0.00,sent via telegram,
 2026-10-25 01:00:07,scissors,0.67,sent via telegram,alerts/snapshots/20261025_010007.jpg
+2026-10-25 14:49:38,scissors,0.44,sent via telegram,alerts/snapshots/20261025_144938.jpg
+2026-10-25 14:57:25,scissors,0.80,sent via telegram,alerts/snapshots/20261025_145725.jpg
+2026-10-25 15:03:20,test alert - ignore this,0.00,sent via telegram,

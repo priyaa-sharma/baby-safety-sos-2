@@ -1,4 +1,3 @@
-"""Always-on baby monitor. Run: python monitor.py  (no browser needed)."""
 import os
 import json
 import time

@@ -1,4 +1,3 @@
-"""SOS delivery: Telegram (photo), ntfy push, optional Twilio. Saves snapshots + CSV history."""
 import os
 import csv
 import datetime as dt
@@ -26,6 +25,16 @@ def _telegram(msg, snap):
     return "telegram"
 
 
+def _call(text):
+    user = os.getenv("CALLMEBOT_USER")
+    if not user:
+        return None
+    r = requests.get("http://api.callmebot.com/start.php",
+                     params={"user": user, "text": text[:250], "lang": "en-US-Standard-B"}, timeout=30)
+    r.raise_for_status()
+    return "telegram call"
+
+
 def _ntfy(msg):
     topic = os.getenv("NTFY_TOPIC")
     if not topic:
@@ -36,30 +45,24 @@ def _ntfy(msg):
     return "ntfy"
 
 
-def _twilio(msg, phone, guardian):
-    sid, token, sender = (os.getenv(k) for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER"))
-    if not (sid and token and sender and phone and len(phone) > 5):
-        return None
-    from twilio.rest import Client
-    c = Client(sid, token)
-    c.messages.create(to=phone, from_=sender, body=msg)
-    c.calls.create(to=phone, from_=sender,
-                   twiml=f"<Response><Say voice='alice' loop='2'>Hello {guardian}. {msg}</Say></Response>")
-    return "twilio call+sms"
-
-
-def send_sos(phone, guardian, hazard, conf, frame=None):
+def send_sos(phone, guardian, hazard, conf, frame=None, kind="hazard"):
     ts = dt.datetime.now()
     snap = ""
     if frame is not None:
         snap = f"{SNAP_DIR}/{ts:%Y%m%d_%H%M%S}.jpg"
         cv2.imwrite(snap, frame)
 
-    msg = f"SOS! Your baby is holding a {hazard.replace('_', ' ')} at {ts:%H:%M:%S}. Please check now."
+    if kind == "cry":
+        msg = f"Your baby has been crying for a while (sound confidence {conf:.2f}) at {ts:%H:%M:%S}. Please check."
+        spoken = "Alert. Your baby has been crying for a while. Please check now."
+    else:
+        msg = f"SOS! Your baby is holding a {hazard.replace('_', ' ')} at {ts:%H:%M:%S}. Please check now."
+        spoken = f"Alert. Your baby is holding {hazard.replace('_', ' ')}. Please check now."
+
     sent, errors = [], []
     for name, fn in (("telegram", lambda: _telegram(msg, snap)),
-                     ("ntfy", lambda: _ntfy(msg)),
-                     ("twilio", lambda: _twilio(msg, phone, guardian))):
+                     ("telegram call", lambda: _call(spoken)),
+                     ("ntfy", lambda: _ntfy(msg))):
         try:
             r = fn()
             if r:

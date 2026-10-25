@@ -1,6 +1,3 @@
-"""Fine-tune YOLOv8 on the baby-hazard dataset, then evaluate and measure latency.
-Usage: python train.py --epochs 50
-"""
 import argparse
 import time
 import glob

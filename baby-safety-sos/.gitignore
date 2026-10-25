@@ -1,0 +1,19 @@
+.env
+alerts/
+settings.json
+
+runs/
+datasets/
+
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
