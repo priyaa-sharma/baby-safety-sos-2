@@ -1,8 +1,8 @@
+"""SOS delivery: Telegram photo, Telegram voice call (CallMeBot), optional ntfy push."""
 import os
 import csv
 import datetime as dt
 import requests
-import cv2
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -49,6 +49,7 @@ def send_sos(phone, guardian, hazard, conf, frame=None, kind="hazard"):
     ts = dt.datetime.now()
     snap = ""
     if frame is not None:
+        import cv2  # imported here so the online dashboard doesn't need OpenCV
         snap = f"{SNAP_DIR}/{ts:%Y%m%d_%H%M%S}.jpg"
         cv2.imwrite(snap, frame)
 

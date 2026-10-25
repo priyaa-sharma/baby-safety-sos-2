@@ -1,3 +1,4 @@
+"""Hazard + 'holding' detection: object detector (YOLO) + pose estimator (YOLO-pose)."""
 import os
 import cv2
 import numpy as np
@@ -6,7 +7,7 @@ from ultralytics import YOLO
 HAZARDS = {"knife", "scissors", "fork", "lighter", "battery", "medicine_strip", "razor"}
 CUSTOM_WEIGHTS = "runs/detect/baby_hazard/weights/best.pt"  # produced by train.py
 LEFT_WRIST, RIGHT_WRIST = 9, 10
-CORAL, GREEN, GRAY = (155, 138, 255), (160, 200, 120), (170, 170, 170)  # BGR
+HOLD, SAFE, GRAY, DOT = (12, 89, 232), (23, 187, 76), (170, 170, 170), (110, 227, 166)  # BGR
 
 
 def point_to_box_distance(p, box):
@@ -60,12 +61,12 @@ class HazardDetector:
             held = any(point_to_box_distance(w, box) <= self.near_px for w in wrists)
             if held:
                 holding.append((name, c))
-            color = CORAL if held else GREEN
+            color = HOLD if held else SAFE
             x1, y1, x2, y2 = box
             tag = "HOLDING " if held else ("(no hand seen) " if not wrists else "")
             cv2.rectangle(out, (x1, y1), (x2, y2), color, 3)
             cv2.putText(out, f"{tag}{name} {c:.2f}", (x1, max(y1 - 8, 15)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         for w in wrists:
-            cv2.circle(out, (int(w[0]), int(w[1])), 6, (180, 130, 244), -1)
+            cv2.circle(out, (int(w[0]), int(w[1])), 6, DOT, -1)
         return out, holding
