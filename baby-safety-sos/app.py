@@ -321,7 +321,7 @@ def live_view():
         last_alert = "none yet"
     css = "card danger" if danger else "card"
     html = "<div class='" + css + "'><h3>" + text + "</h3>"
-    html = html + "<p>Last alert: " + str(last_alert) + "</p></div>"
+
 
     cry_status = str(s.get("cry_status", "not started"))
     cry_score = float(s.get("cry_score", 0.0))
@@ -340,7 +340,7 @@ def live_view():
         cry_text, cry_danger = "Listening. No crying", False
     cry_css = "card danger" if cry_danger else "card"
     cry_html = "<div class='" + cry_css + "'><h3>" + cry_text + "</h3>"
-    cry_html = cry_html + "<p>Cry level: " + format(cry_score, ".2f") + " (alert from " + format(cry_thr, ".2f") + ")</p></div>"
+    
 
     with col_feed:
         if os.path.exists(LIVE) and not stale:

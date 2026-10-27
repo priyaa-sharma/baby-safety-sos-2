@@ -7,3 +7,6 @@ time,hazard,confidence,status,snapshot
 2026-10-25 14:49:38,scissors,0.44,sent via telegram,alerts/snapshots/20261025_144938.jpg
 2026-10-25 14:57:25,scissors,0.80,sent via telegram,alerts/snapshots/20261025_145725.jpg
 2026-10-25 15:03:20,test alert - ignore this,0.00,sent via telegram,
+2026-10-26 20:13:15,scissors,0.57,"sent via telegram, telegram call",alerts/snapshots/20261026_201315.jpg
+2026-10-26 20:15:09,scissors,0.40,"sent via telegram, telegram call",alerts/snapshots/20261026_201509.jpg
+2026-10-26 20:16:19,scissors,0.59,"sent via telegram, telegram call",alerts/snapshots/20261026_201619.jpg
