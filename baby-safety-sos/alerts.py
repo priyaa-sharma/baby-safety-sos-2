@@ -57,7 +57,10 @@ def send_sos(phone, guardian, hazard, conf, frame=None, kind="hazard"):
         msg = f"Your baby has been crying for a while (sound confidence {conf:.2f}) at {ts:%H:%M:%S}. Please check."
         spoken = "Alert. Your baby has been crying for a while. Please check now."
     else:
-        msg = f"SOS! Your baby is holding a {hazard.replace('_', ' ')} at {ts:%H:%M:%S}. Please check now."
+        msg = (
+            f"SOS! Your baby is holding a {hazard.replace('_', ' ')} at "
+            f"{ts:%H:%M:%S}. Please check now."
+        )
         spoken = f"Alert. Your baby is holding {hazard.replace('_', ' ')}. Please check now."
 
     sent, errors = [], []

@@ -33,7 +33,7 @@ def write_status(**d):
 
 def write_live(frame):
     try:
-        cv2.imwrite("alerts/live_tmp.jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
+        cv2.imwrite("alerts/live_tmp.jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
         os.replace("alerts/live_tmp.jpg", LIVE)
     except Exception:
         pass

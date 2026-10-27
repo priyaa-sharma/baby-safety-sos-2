@@ -77,7 +77,7 @@ if not st.session_state.started:
       <div class="desc">
         When a baby is left alone for a little while, small things can turn dangerous quickly.
         Baby Safety SOS watches through the camera and listens through the microphone.
-        If your baby picks up something harmful like scissors or a knife, or keeps crying,
+        If your baby picks up something harmful like a medicine strip or razor, or keeps crying,
         you get an alert with a photo on your phone automatically, so you can act right away.
       </div>
     </div>
@@ -196,9 +196,9 @@ if not st.session_state.started:
               <rect x="45" y="76" width="60" height="50" rx="16" fill="#48872B"/>
               <rect x="104" y="60" width="62" height="36" fill="none" stroke="#E8590C" stroke-width="3"/>
               <rect x="104" y="44" width="86" height="16" fill="#E8590C"/>
-              <text x="109" y="56" font-size="11" font-weight="700" fill="#FFFFFF" font-family="sans-serif">HOLDING scissors 0.87</text>
+              <text x="109" y="56" font-size="11" font-weight="700" fill="#FFFFFF" font-family="sans-serif">HOLDING razor 0.87</text>
             </svg>
-            <p>SOS! Your baby is holding a scissors at 14:32:10. Please check now.</p>
+            <p>SOS! Your baby is holding a razor at 14:32:10. Please check now.</p>
             <div class="t">14:32</div>
           </div>
         </div>
@@ -277,7 +277,10 @@ with st.sidebar:
     cfg["cry_secs"] = st.slider("Crying must last (sec)", 2.0, 20.0, float(cfg["cry_secs"]), 1.0)
     cfg["cry_cooldown"] = st.slider("Cry alert cooldown (sec)", 30, 600, int(cfg["cry_cooldown"]), 30)
     custom = os.path.exists("runs/detect/baby_hazard/weights/best.pt")
-    st.caption("Model: custom-trained" if custom else "Model: pretrained COCO")
+    st.caption(
+        "Model: COCO + custom medicine/razor"
+        if custom else "Model: pretrained COCO"
+    )
     if st.button("Send test alert"):
         st.info(send_sos("", cfg["guardian"], "test alert - ignore this", 0.0))
 
@@ -285,7 +288,7 @@ with open(SETTINGS, "w") as f:
     json.dump(cfg, f)
 
 
-@st.fragment(run_every=1)
+@st.fragment(run_every=0.5)
 def live_view():
     col_feed, col_side = st.columns([3, 2])
     try:

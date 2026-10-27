@@ -2,9 +2,11 @@
 import os
 import cv2
 import numpy as np
+import torch
 from ultralytics import YOLO
 
 HAZARDS = {"knife", "scissors", "fork", "lighter", "battery", "medicine_strip", "razor"}
+COCO_HAZARDS = {"knife", "scissors", "fork"}
 CUSTOM_WEIGHTS = "runs/detect/baby_hazard/weights/best.pt"  # produced by train.py
 LEFT_WRIST, RIGHT_WRIST = 9, 10
 HOLD, SAFE, GRAY, DOT = (12, 89, 232), (23, 187, 76), (170, 170, 170), (110, 227, 166)  # BGR
@@ -18,19 +20,33 @@ def point_to_box_distance(p, box):
 
 
 class HazardDetector:
-    def __init__(self, weights=None, conf=0.30, near_px=60, imgsz=480):
+    def __init__(self, weights=None, conf=0.30, near_px=60, imgsz=256):
+        torch.set_num_threads(1)
+        cv2.setNumThreads(1)
         path = weights or (CUSTOM_WEIGHTS if os.path.exists(CUSTOM_WEIGHTS) else "yolov8n.pt")
-        self.using_custom = path == CUSTOM_WEIGHTS
+        self.using_custom = os.path.abspath(path) == os.path.abspath(CUSTOM_WEIGHTS)
         self.obj = YOLO(path)
+        self.coco = YOLO("yolov8n.pt") if self.using_custom else None
+        self.coco_hazard_ids = (
+            [
+                class_id for class_id, name in self.coco.names.items()
+                if name in COCO_HAZARDS
+            ]
+            if self.coco is not None else []
+        )
         self.pose = YOLO("yolov8n-pose.pt")
         self.conf, self.near_px, self.imgsz = conf, near_px, imgsz
         blank = np.zeros((480, 640, 3), dtype=np.uint8)  # warm-up so the first frame isn't slow
         self.obj(blank, imgsz=self.imgsz, verbose=False)
-        self.pose(blank, imgsz=320, verbose=False)
+        if self.coco is not None:
+            self.coco(blank, imgsz=self.imgsz, classes=self.coco_hazard_ids, verbose=False)
+        self.pose(blank, imgsz=256, verbose=False)
+        # Ultralytics may set a larger CPU thread pool while warming up predictors.
+        torch.set_num_threads(1)
 
     def _wrists(self, frame):
         wrists = []
-        pr = self.pose(frame, imgsz=320, conf=0.25, verbose=False)[0]
+        pr = self.pose(frame, imgsz=256, conf=0.25, verbose=False)[0]
         if pr.keypoints is not None and len(pr.keypoints.xy):
             xy = pr.keypoints.xy.cpu().numpy()
             cf = pr.keypoints.conf.cpu().numpy() if pr.keypoints.conf is not None else np.ones(xy.shape[:2])
@@ -42,17 +58,30 @@ class HazardDetector:
 
     def process(self, frame):
         """Returns (annotated_frame, holding_list). holding_list = [(name, conf)]."""
-        res = self.obj(frame, conf=self.conf, imgsz=self.imgsz, verbose=False)[0]
+        results = [
+            self.obj(frame, conf=self.conf, imgsz=self.imgsz, verbose=False)[0]
+        ]
+        if self.coco is not None:
+            results.append(
+                self.coco(
+                    frame, conf=self.conf, imgsz=self.imgsz,
+                    classes=self.coco_hazard_ids, verbose=False,
+                )[0]
+            )
         out = frame.copy()
         hazards = []
-        for b in res.boxes:
-            name = self.obj.names[int(b.cls)]
-            x1, y1, x2, y2 = map(int, b.xyxy[0].tolist())
-            if name in HAZARDS:
-                hazards.append((name, float(b.conf), [x1, y1, x2, y2]))
-            else:  # show everything else the AI sees, thin and gray (for debugging)
-                cv2.rectangle(out, (x1, y1), (x2, y2), GRAY, 1)
-                cv2.putText(out, name, (x1, max(y1 - 5, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, GRAY, 1)
+        for model, result in zip(
+            (self.obj, self.coco) if self.coco is not None else (self.obj,),
+            results,
+        ):
+            for b in result.boxes:
+                name = model.names[int(b.cls)]
+                x1, y1, x2, y2 = map(int, b.xyxy[0].tolist())
+                if name in HAZARDS:
+                    hazards.append((name, float(b.conf), [x1, y1, x2, y2]))
+                else:  # show everything else the AI sees, thin and gray (for debugging)
+                    cv2.rectangle(out, (x1, y1), (x2, y2), GRAY, 1)
+                    cv2.putText(out, name, (x1, max(y1 - 5, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, GRAY, 1)
 
         wrists = self._wrists(frame) if hazards else []  # pose only when needed (saves CPU)
 

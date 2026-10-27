@@ -1,1 +1,1 @@
-{"armed": true, "camera": 0, "guardian": "Parent", "phone": "", "conf": 0.4, "near_px": 60, "hold_secs": 1.5, "cooldown": 60, "cry_on": true, "cry_thr": 0.35, "cry_secs": 4.0, "cry_cooldown": 120}
+{"armed": true, "camera": 0, "guardian": "Parent", "phone": "", "conf": 0.1, "near_px": 20, "hold_secs": 1.0, "cooldown": 30, "cry_on": true, "cry_thr": 0.35, "cry_secs": 4.0, "cry_cooldown": 120}

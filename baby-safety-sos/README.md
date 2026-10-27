@@ -1,13 +1,13 @@
 # Baby Safety SOS
 
-An AI/ML safety assistant for babies who are left alone. A camera watches the baby, and if the baby picks up a hazardous object (scissors, knife, fork and similar) or cries for a sustained time, the guardian gets an alert on their phone automatically. No button needs to be pressed.
+An AI/ML safety assistant for babies who are left alone. A camera watches the baby, and if the baby picks up a medicine strip or razor, or cries for a sustained time, the guardian gets an alert on their phone automatically. No button needs to be pressed.
 
 This is a safety assist, not a replacement for adult supervision. It will sometimes miss things and sometimes raise false alarms.
 
 ## Features
 
 - **Always-on camera monitoring.** Runs continuously in the background, with no browser needed.
-- **Hazard detection.** YOLOv8 detects hazardous objects in every frame.
+- **Hazard detection.** YOLOv8 detects scissors, knives and forks using COCO weights, plus medicine strips and razors using the custom-trained model when available.
 - **"Holding" logic.** YOLOv8-pose finds the wrists, and an alert is raised only when a hand is close to a hazard. An object lying on a table does not trigger it.
 - **Sustained-hold rule.** The hazard must stay in hand for a set time (default 1.5 s) before an alert is sent, which reduces false alarms.
 - **Cry detection.** A pretrained audio model (AST, trained on AudioSet) listens through the microphone and alerts when crying lasts for several seconds.
@@ -51,6 +51,17 @@ baby-safety-sos/
   alerts/             Generated: live frame, status, alert log, snapshots
   settings.json       Generated: dashboard settings
 ```
+
+## WORKING 
+
+https://github.com/user-attachments/assets/def24c4a-6465-4ee7-a881-c90ed1ed0c00
+
+<img width="776" height="329" alt="Screenshot 2026-10-26 202120" src="https://github.com/user-attachments/assets/ff634308-5a04-4964-b87c-55f1334bb597" />
+<img width="533" height="328" alt="Screenshot 2026-10-26 202143" src="https://github.com/user-attachments/assets/21481de9-e599-48fe-90cb-ead005b0946b" />
+
+
+
+
 
 ## Setup
 
@@ -119,7 +130,7 @@ For continuous use, keep the computer plugged in, turn off sleep, and point the 
 
 ## Testing
 
-**Hazard detection:** hold scissors, a toy knife or a fork in front of the camera with your wrist visible. The box should turn coral and say HOLDING, and an alert arrives after the hold time. Put the object on a table and confirm that no alert is sent. Use toy or blunt lookalikes, and never put real sharp objects near a child.
+**Hazard detection:** use a medicine-strip prop or blunt razor lookalike in front of the camera with your wrist visible. The box should turn coral and say HOLDING, and an alert arrives after the hold time. Put the object on a table and confirm that no alert is sent. Never put medicine or a real razor near a child.
 
 Reading the video overlay: a green box with a name means a hazard is seen but nobody is holding it. "(no hand seen)" means the object is detected but no wrist is visible. Thin gray boxes show other objects the model sees and are only there for debugging.
 
@@ -129,12 +140,13 @@ Reading the video overlay: a green box with a name means a hazard is seen but no
 
 ## Training your own model
 
-The pretrained COCO model only knows knife, scissors and fork. To add other hazards such as lighters, medicine strips, batteries and razors:
+The custom detector is trained to recognize medicine strips and razors:
 
-1. Download a YOLOv8-format dataset from Roboflow Universe, or label your own images. Include small hands holding objects, and include negatives such as objects lying on a table.
-2. Place it in `datasets/baby_hazards/{train,valid,test}/{images,labels}` and match the class names in `data.yaml`.
-3. Run `python train.py --epochs 50`. A free Google Colab GPU works well if your computer has no GPU.
-4. Restart `monitor.py`. It automatically uses `runs/detect/baby_hazard/weights/best.pt` when it exists.
+1. Collect varied views of medicine strips and razors, both near hands and not being held.
+2. For the supplied `datasets/baby_hazards/train/images/Images.zip`, run `python annotate_dataset.py`. It extracts the images and opens a local labeling window. Drag a box around the hazard itself (not the hand), then press **S** to save. Press **N** if the object is not visible, **R** to redraw, or **Q** to stop and resume later. The medicine-strip and razor folders map to class IDs 0 and 1. To reopen empty label files (for example, if **N** was pressed by mistake), run `python annotate_dataset.py --redo-empty`.
+3. Keep the 39 supplied frames in the training split; they come from only two short recordings, so randomly splitting them into train/validation/test would leak near-duplicate frames. Add new, separately recorded images of both classes to `valid` and `test`, then label them with `python annotate_dataset.py --split valid` and `python annotate_dataset.py --split test`. In the labeling window, press **0** for a medicine strip or **1** for a razor, draw its box, and press **S** to save. The trainer checks for both classes and complete labels in every split before training.
+4. Run `python train.py --epochs 50`. A free Google Colab GPU works well if your computer has no GPU.
+5. Restart `monitor.py`. When `runs/detect/baby_hazard/weights/best.pt` exists, the monitor combines it with the original COCO model: COCO detects scissors, knives and forks, while the custom model detects medicine strips and razors.
 
 `train.py` prints precision, recall, mAP50, mAP50-95, per-class AP and average latency. It also saves the confusion matrix and the PR curves in `runs/detect/baby_hazard/`.
 

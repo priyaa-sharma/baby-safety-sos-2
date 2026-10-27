@@ -10,3 +10,18 @@ time,hazard,confidence,status,snapshot
 2026-10-26 20:13:15,scissors,0.57,"sent via telegram, telegram call",alerts/snapshots/20261026_201315.jpg
 2026-10-26 20:15:09,scissors,0.40,"sent via telegram, telegram call",alerts/snapshots/20261026_201509.jpg
 2026-10-26 20:16:19,scissors,0.59,"sent via telegram, telegram call",alerts/snapshots/20261026_201619.jpg
+2026-10-28 00:06:25,scissors,0.26,"sent via telegram, telegram call",alerts/snapshots/20261028_000625.jpg
+2026-10-28 00:16:38,razor,0.29,"sent via telegram, telegram call",alerts/snapshots/20261028_001638.jpg
+2026-10-28 00:17:14,razor,0.12,"sent via telegram, telegram call",alerts/snapshots/20261028_001714.jpg
+2026-10-28 00:22:47,knife,0.12,"demo (no alert channel configured, nothing sent) | telegram failed: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot8726484820:AAE_GJEcr5ryqBsJh5IWklG0jPdwXT4KiWQ/sendPhoto (Caused by NameResolutionError(""<urllib3.connection.HTTPSConnection object at 0x000001C7F7FCDA90>: Failed to resolve 'api.telegram.org' ([Errno 11001] getaddrinfo failed)"")); telegram call failed: HTTPConnectionPool(host='api.callmebot.com', port=80): Max retries exceeded with url: /start.php?user=%40priya_sharmaa26&text=Alert.+Your+baby+is+holding+knife.+Please+check+now.+The+default+COCO+model+detects+knife%2C+scissors%2C+and+fork.+Lighter%2C+battery%2C+medicine+strip%2C+and+razor+require+a+custom-trained+model.&lang=en-US-Standard-B (Caused by NameResolutionError(""<urllib3.connection.HTTPConnection object at 0x000001C7F4B17C50>: Failed to resolve 'api.callmebot.com' ([Errno 11001] getaddrinfo failed)""))",alerts/snapshots/20261028_002247.jpg
+2026-10-28 00:25:44,scissors,0.15,"sent via telegram, telegram call",alerts/snapshots/20261028_002544.jpg
+2026-10-28 00:26:48,razor,0.25,"sent via telegram, telegram call",alerts/snapshots/20261028_002648.jpg
+2026-10-28 00:29:11,razor,0.90,"sent via SOS! Your baby is holding a razor at 00:29:11. Please check now., Alert. Your baby is holding razor. Please check now.",
+2026-10-28 00:36:22,scissors,0.15,"sent via telegram, telegram call",alerts/snapshots/20261028_003622.jpg
+2026-10-28 00:38:02,razor,0.10,"sent via telegram, telegram call",alerts/snapshots/20261028_003802.jpg
+2026-10-28 00:38:37,razor,0.10,"sent via telegram, telegram call",alerts/snapshots/20261028_003837.jpg
+2026-10-28 00:40:49,medicine_strip,0.20,"sent via telegram, telegram call",alerts/snapshots/20261028_004049.jpg
+2026-10-28 00:43:40,medicine_strip,0.11,"sent via telegram, telegram call",alerts/snapshots/20261028_004340.jpg
+2026-10-28 00:46:52,razor,0.35,"sent via telegram, telegram call",alerts/snapshots/20261028_004652.jpg
+2026-10-28 00:47:39,razor,0.26,"sent via telegram, telegram call",alerts/snapshots/20261028_004739.jpg
+2026-10-28 00:56:48,razor,0.12,"sent via telegram, telegram call",alerts/snapshots/20261028_005648.jpg

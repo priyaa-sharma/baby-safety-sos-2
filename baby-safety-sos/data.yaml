@@ -3,10 +3,5 @@ train: train/images
 val: valid/images
 test: test/images
 names:
-  0: knife
-  1: scissors
-  2: fork
-  3: lighter
-  4: battery
-  5: medicine_strip
-  6: razor
+  0: medicine_strip
+  1: razor

@@ -3,7 +3,34 @@ alerts/
 settings.json
 
 runs/
-datasets/
+datasets/*
+!datasets/baby_hazards/
+datasets/baby_hazards/*
+!datasets/baby_hazards/README.md
+!datasets/baby_hazards/train/
+!datasets/baby_hazards/valid/
+!datasets/baby_hazards/test/
+datasets/baby_hazards/train/*
+datasets/baby_hazards/valid/*
+datasets/baby_hazards/test/*
+!datasets/baby_hazards/train/images/
+!datasets/baby_hazards/train/labels/
+!datasets/baby_hazards/valid/images/
+!datasets/baby_hazards/valid/labels/
+!datasets/baby_hazards/test/images/
+!datasets/baby_hazards/test/labels/
+datasets/baby_hazards/train/images/*
+datasets/baby_hazards/train/labels/*
+datasets/baby_hazards/valid/images/*
+datasets/baby_hazards/valid/labels/*
+datasets/baby_hazards/test/images/*
+datasets/baby_hazards/test/labels/*
+!datasets/baby_hazards/train/images/.gitkeep
+!datasets/baby_hazards/train/labels/.gitkeep
+!datasets/baby_hazards/valid/images/.gitkeep
+!datasets/baby_hazards/valid/labels/.gitkeep
+!datasets/baby_hazards/test/images/.gitkeep
+!datasets/baby_hazards/test/labels/.gitkeep
 
 *.pt
 
