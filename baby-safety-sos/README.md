@@ -13,6 +13,7 @@ This is a safety assist, not a replacement for adult supervision. It will someti
 - **Cry detection.** A pretrained audio model (AST, trained on AudioSet) listens through the microphone and alerts when crying lasts for several seconds.
 - **Instant alerts.** A Telegram message with a snapshot photo, plus an optional Telegram voice call and an optional ntfy push notification.
 - **Live dashboard.** A pastel pink Streamlit page with the live feed, status cards, alert history and adjustable settings.
+- **Local sign-in.** Create an account with an email and password, or sign in with an existing local account. Passwords are stored as salted hashes in a local SQLite database. Google sign-in can be enabled with Streamlit OIDC settings.
 - **Alert cooldowns.** Prevents the guardian from being flooded with repeated alerts.
 - **Custom training pipeline.** `train.py` fine-tunes YOLOv8 on your own hazard dataset and reports precision, recall, mAP and latency.
 
@@ -98,6 +99,54 @@ NTFY_TOPIC=
 **ntfy push (optional, free):** install the ntfy app, subscribe to a long random topic name, and put the same name in `NTFY_TOPIC`.
 
 Keep your bot token private. If it is ever exposed, revoke it with **@BotFather** using `/revoke` and put the new token in `.env`.
+
+### Configure password-reset email
+
+Forgot-password links are sent by SMTP and expire after 30 minutes. Add your email provider's SMTP settings to `.env`:
+
+```
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-sender@example.com
+SMTP_PASSWORD=your-email-app-password
+SMTP_FROM=Baby Safety SOS <your-sender@example.com>
+APP_BASE_URL=http://localhost:8501
+```
+
+Use an app password if your provider requires one. For a deployed app, set `APP_BASE_URL` to its public HTTPS URL so links open the right site. Email credentials and `.env` must remain private.
+
+### Configure Google sign-in (optional)
+
+Local email and password accounts work without any additional setup. To enable the Google button, configure Streamlit OIDC in `.streamlit/secrets.toml` with your Google OAuth client:
+
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "a-long-random-secret"
+client_id = "your-google-client-id"
+client_secret = "your-google-client-secret"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
+```
+
+Keep the secrets file private and add the matching redirect URI to your Google OAuth client.
+
+### Supabase Python client
+
+The Supabase client is initialized in `src/supabase_client.py`. Replace `SUPABASE_URL` and `SUPABASE_PUBLIC_KEY` there with your project's URL and publishable key, then import it in Python with:
+
+```
+from src.supabase_client import supabase
+```
+
+The `supabase` Python package is included in `requirements.txt`.
+
+For signup confirmation emails, set the redirect URL in `.env` to the URL where this Streamlit app is running:
+
+```
+SUPABASE_AUTH_REDIRECT_URL=http://localhost:8501
+```
+
+In the Supabase dashboard, open **Authentication → URL Configuration** and add that exact URL to **Redirect URLs**. For deployment, use the app's public URL for both the environment variable and the allowed redirect URL. Request a fresh confirmation email after changing the redirect; old or already-used links may have expired.
 
 ## Run
 

@@ -1,0 +1,23 @@
+{
+  "name": "baby-safety-sos---copy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/priyaa-sharma/baby-safety-sos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/priyaa-sharma/baby-safety-sos/issues"
+  },
+  "homepage": "https://github.com/priyaa-sharma/baby-safety-sos#readme",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
+  }
+}

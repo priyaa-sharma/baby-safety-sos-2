@@ -5,3 +5,4 @@ numpy
 pandas
 twilio
 python-dotenv
+supabase

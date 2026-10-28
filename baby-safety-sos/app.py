@@ -4,7 +4,19 @@ import time
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+import httpx
+from supabase_auth.errors import AuthApiError
+from streamlit.errors import StreamlitSecretNotFoundError
+from auth import (
+    build_password_reset_url,
+    create_password_reset_token,
+    discard_password_reset_token,
+    password_reset_token_valid,
+    reset_password,
+    send_password_reset_email,
+)
 from alerts import send_sos, LOG
+from src.supabase_client import create_supabase_client
 
 SETTINGS = "settings.json"
 LIVE = "alerts/live.jpg"
@@ -55,6 +67,46 @@ h2,h3 {color:#EAF3E4;}
 
 if "started" not in st.session_state:
     st.session_state.started = False
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "Sign in"
+if "auth_notice" not in st.session_state:
+    st.session_state.auth_notice = ""
+if "auth_email" not in st.session_state:
+    st.session_state.auth_email = ""
+if "supabase_client" not in st.session_state:
+    st.session_state.supabase_client = create_supabase_client()
+supabase = st.session_state.supabase_client
+
+session_error = None
+try:
+    supabase_session = supabase.auth.get_session()
+except AuthApiError as error:
+    supabase_session = None
+    session_error = "Could not verify your Supabase session: " + error.message
+except httpx.HTTPError:
+    supabase_session = None
+    session_error = "Could not connect to Supabase to verify your session."
+
+google_authenticated = getattr(st.user, "is_logged_in", False)
+if supabase_session:
+    st.session_state.authenticated = True
+    st.session_state.user_name = getattr(
+        getattr(supabase_session, "user", None), "email", "Supabase user"
+    )
+elif google_authenticated:
+    st.session_state.authenticated = True
+    st.session_state.user_name = getattr(st.user, "name", "Google user")
+else:
+    st.session_state.authenticated = False
+    st.session_state.pop("user_name", None)
+
+reset_token = st.query_params.get("reset", "")
+if reset_token:
+    st.session_state.auth_mode = "Reset password"
+    st.session_state.authenticated = False
+    st.session_state.started = True
 
 
 # ---------------------------------------------------------------- landing page
@@ -228,6 +280,284 @@ if not st.session_state.started:
     st.stop()
 
 
+# --------------------------------------------------------------------- sign in
+if not st.session_state.authenticated:
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}
+    header[data-testid="stHeader"] {background:transparent;}
+    .stApp {background:#f7f8f5; color:#242a24;}
+    [data-testid="stMain"] > div {max-width:1120px; padding-top:2rem;}
+    .auth-copy {padding:40px 32px 32px 8px; color:#354238;}
+    .auth-copy .eyebrow {color:#63846b; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;}
+    .auth-copy h1 {color:#1f2922; font-size:42px; line-height:1.15; margin:14px 0;}
+    .auth-copy p {color:#68756b; font-size:16px; line-height:1.7; max-width:440px;}
+    .auth-art {margin:28px 0 0; padding:24px; border-radius:28px; background:#edf2eb;
+       border:1px solid #e1e9df; text-align:center;}
+    .auth-art svg {width:100%; max-width:340px; height:auto;}
+    .st-key-auth_panel {background:#fff; border:1px solid #e8ebe6; border-radius:24px;
+       box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
+    .st-key-auth_panel h2 {text-align:center; color:#202720; font-size:32px; margin:0 0 4px;}
+    .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#7c847d; font-size:14px; margin:0 0 20px;}
+    [data-testid="stTextInput"] label {display:none;}
+    [data-testid="stTextInput"] input {background:#fff; border:1px solid #e2e6e1; border-radius:12px;
+       min-height:46px; color:#000 !important; -webkit-text-fill-color:#000;}
+    [data-testid="stTextInput"] input::placeholder {color:#000 !important; opacity:1;}
+    [data-testid="stTextInput"] input:focus {border-color:#6f9476; box-shadow:0 0 0 1px #6f9476;}
+    [data-testid="stFormSubmitButton"] button {background:#202720; color:#fff; border:0;
+       border-radius:999px; min-height:44px; font-weight:700;}
+    [data-testid="stFormSubmitButton"] button:hover {background:#354638; color:#fff;}
+    .st-key-google_auth button {background:#fff; color:#000; border:1px solid #e2e6e1;
+       border-radius:12px; min-height:44px;}
+    .st-key-google_auth button:hover {background:#f7f8f5; color:#000; border-color:#cdd5cc;}
+    .auth-divider {display:flex; align-items:center; gap:12px; color:#929991;
+       font-size:12px; margin:18px 0;}
+    .auth-divider:before, .auth-divider:after {content:""; height:1px; background:#e8ebe6; flex:1;}
+    .auth-foot {text-align:center; color:#737c74; font-size:13px;}
+    .st-key-auth_switch button {background:transparent; color:#000; border:0; padding:0;
+       font-weight:700; min-height:0;}
+    .st-key-auth_switch button:hover {background:transparent; color:#000; text-decoration:underline;}
+    .st-key-forgot_password button {background:transparent; color:#000; border:0; padding:0;
+       font-size:12px; min-height:0;}
+    .st-key-forgot_password button:hover {background:transparent; color:#000; text-decoration:underline;}
+    .st-key-back_to_login button {background:transparent; color:#000; border:0; padding:0;
+       font-weight:700; min-height:0;}
+    .st-key-back_to_login button:hover {background:transparent; color:#000; text-decoration:underline;}
+    @media (max-width:760px) {
+      [data-testid="stMain"] > div {padding:1rem 1rem 2rem;}
+      .auth-copy {padding:4px 8px 8px;}
+      .auth-copy h1 {font-size:32px;}
+      .auth-art {display:none;}
+      .st-key-auth_panel {padding:26px 20px 20px;}
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    intro, form_col = st.columns([1.05, 0.95], gap="large", vertical_alignment="center")
+    with intro:
+        st.markdown("""
+        <div class="auth-copy">
+          <div class="eyebrow">Baby Safety SOS</div>
+          <h1>A little more peace of mind.</h1>
+          <p>Sign in to keep an eye on what matters most. Your camera and microphone are
+          processed on your own computer, never uploaded.</p>
+          <div class="auth-art">
+            <svg viewBox="0 0 360 250" role="img" aria-label="Illustration of a protected baby">
+              <circle cx="180" cy="126" r="104" fill="#dfeadd"/>
+              <path d="M180 31l62 23v55c0 49-29 83-62 99-33-16-62-50-62-99V54z" fill="#709678"/>
+              <path d="M180 176c-31-23-44-39-44-57 0-13 9-22 22-22 10 0 18 5 22 14 4-9 12-14 22-14 13 0 22 9 22 22 0 18-13 34-44 57z" fill="#f7f8f5"/>
+              <circle cx="74" cy="65" r="8" fill="#d5aa72"/><circle cx="291" cy="179" r="11" fill="#d5aa72"/>
+              <path d="M54 177c13-13 26-13 39 0M271 66c12-12 24-12 36 0" fill="none" stroke="#b3c9b2" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="91" cy="124" r="4" fill="#709678"/><circle cx="278" cy="112" r="4" fill="#709678"/>
+            </svg>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with form_col:
+        with st.container(key="auth_panel"):
+            mode = st.session_state.auth_mode
+            heading = {
+                "Sign in": "Welcome",
+                "Sign up": "Create account",
+                "Forgot password": "Forgot password?",
+                "Reset password": "Choose a new password",
+            }[mode]
+            subtitle = {
+                "Sign in": "Log in to your account or sign up",
+                "Sign up": "Create an account to get started",
+                "Forgot password": "We'll email you a secure link to reset it.",
+                "Reset password": "Choose a new password for your account.",
+            }[mode]
+            st.markdown(
+                "<h2>" + heading + "</h2><p>" + subtitle + "</p>",
+                unsafe_allow_html=True,
+            )
+            if st.session_state.auth_notice:
+                st.success(st.session_state.auth_notice)
+                st.session_state.auth_notice = ""
+            if session_error:
+                st.error(session_error)
+
+            if mode == "Reset password" and not password_reset_token_valid(reset_token):
+                st.error("This reset link has expired or was already used. Request a new one.")
+                if st.button("Request another reset link", key="back_to_login"):
+                    st.session_state.auth_mode = "Forgot password"
+                    st.query_params.clear()
+                    st.rerun()
+            else:
+                form_key = "password_reset_form" if mode == "Reset password" else (
+                    "forgot_password_form" if mode == "Forgot password" else "local_auth_form"
+                )
+                with st.form(form_key, clear_on_submit=False):
+                    name = ""
+                    email = ""
+                    password = ""
+                    confirm_password = ""
+                    if mode == "Sign up":
+                        name = st.text_input("Name", placeholder="Your name")
+                    if mode in ("Sign in", "Sign up", "Forgot password"):
+                        email = st.text_input(
+                            "Email",
+                            placeholder="Email",
+                            key="auth_email" if mode in ("Sign in", "Sign up") else None,
+                        )
+                    if mode in ("Sign in", "Sign up", "Reset password"):
+                        password = st.text_input("Password", placeholder="Password", type="password")
+                    if mode in ("Sign up", "Reset password"):
+                        confirm_password = st.text_input(
+                            "Confirm password", placeholder="Confirm password", type="password"
+                        )
+                    button_text = "Send reset link" if mode == "Forgot password" else (
+                        "Update password" if mode == "Reset password" else mode
+                    )
+                    submitted = st.form_submit_button(button_text, use_container_width=True)
+
+                if submitted:
+                    if mode == "Sign up":
+                        if password != confirm_password:
+                            st.error("Those passwords do not match.")
+                        else:
+                            try:
+                                response = supabase.auth.sign_up({
+                                    "email": email.strip(),
+                                    "password": password,
+                                    "options": {
+                                        "data": {"name": name.strip()},
+                                        "email_redirect_to": os.getenv(
+                                            "SUPABASE_AUTH_REDIRECT_URL",
+                                            os.getenv("APP_BASE_URL", "http://localhost:8501"),
+                                        ),
+                                    },
+                                })
+                            except AuthApiError as error:
+                                st.error(error.message)
+                            except httpx.HTTPError:
+                                st.error("Could not connect to Supabase. Please try again.")
+                            else:
+                                if response.session:
+                                    try:
+                                        supabase.auth.sign_out()
+                                    except AuthApiError as error:
+                                        st.error(
+                                            "Account created, but could not clear the sign-in "
+                                            "session: " + error.message
+                                        )
+                                        st.stop()
+                                    except httpx.HTTPError:
+                                        st.error(
+                                            "Account created, but could not clear the sign-in "
+                                            "session. Please try signing out."
+                                        )
+                                        st.stop()
+                                st.session_state.authenticated = False
+                                st.session_state.started = True
+                                st.session_state.auth_mode = "Sign in"
+                                st.session_state.auth_notice = (
+                                    "Your account has been created. Please check your email "
+                                    "and verify your address before logging in."
+                                )
+                                st.rerun()
+                    elif mode == "Sign in":
+                        try:
+                            response = supabase.auth.sign_in_with_password({
+                                "email": email.strip(),
+                                "password": password,
+                            })
+                        except AuthApiError as error:
+                            st.error(error.message)
+                        except httpx.HTTPError:
+                            st.error("Could not connect to Supabase. Please try again.")
+                        else:
+                            if response.session:
+                                st.session_state.authenticated = True
+                                st.session_state.started = True
+                                metadata = getattr(response.user, "user_metadata", {}) or {}
+                                st.session_state.user_name = metadata.get(
+                                    "name", response.user.email
+                                )
+                                st.rerun()
+                            else:
+                                st.error("Supabase did not return an active sign-in session.")
+                    elif mode == "Forgot password":
+                        token = create_password_reset_token(email)
+                        if token:
+                            try:
+                                base_url = os.getenv("APP_BASE_URL", "http://localhost:8501")
+                                reset_url = build_password_reset_url(base_url, token)
+                                send_password_reset_email(email.strip().lower(), reset_url)
+                            except (OSError, RuntimeError, ValueError) as error:
+                                discard_password_reset_token(token)
+                                st.error("Could not send the reset email. " + str(error))
+                            else:
+                                st.session_state.auth_notice = (
+                                    "If an account exists for that email, a password reset link "
+                                    "has been sent. Check your inbox."
+                                )
+                                st.rerun()
+                        else:
+                            st.session_state.auth_notice = (
+                                "If an account exists for that email, a password reset link "
+                                "has been sent. Check your inbox."
+                            )
+                            st.rerun()
+                    elif mode == "Reset password":
+                        if password != confirm_password:
+                            st.error("Those passwords do not match.")
+                        else:
+                            success, message = reset_password(reset_token, password)
+                            if success:
+                                st.query_params.clear()
+                                st.session_state.auth_mode = "Sign in"
+                                st.session_state.auth_notice = message + " Please sign in."
+                                st.rerun()
+                            else:
+                                st.error(message)
+
+            if mode in ("Sign in", "Sign up"):
+                if mode == "Sign in":
+                    _, forgot_col = st.columns([2, 1])
+                    with forgot_col:
+                        with st.container(key="forgot_password"):
+                            if st.button("Forgot password?", use_container_width=True):
+                                st.session_state.auth_mode = "Forgot password"
+                                st.rerun()
+                st.markdown('<div class="auth-divider">or</div>', unsafe_allow_html=True)
+                with st.container(key="google_auth"):
+                    if st.button("Continue with Google", use_container_width=True):
+                        try:
+                            auth_settings = st.secrets["auth"]
+                            required = ("redirect_uri", "cookie_secret", "client_id",
+                                        "client_secret", "server_metadata_url")
+                            if all(auth_settings.get(key) for key in required):
+                                st.login()
+                            else:
+                                st.info("Google sign-in needs OIDC settings in .streamlit/secrets.toml.")
+                        except (StreamlitSecretNotFoundError, KeyError):
+                            st.info(
+                                "Google sign-in is not configured yet. Add your Google OIDC settings "
+                                "to .streamlit/secrets.toml to enable it."
+                            )
+
+            st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
+            if mode != "Sign in" and mode != "Sign up":
+                footer = "Back to sign in"
+                destination = "Sign in"
+            else:
+                footer = "Don't have an account?" if mode == "Sign in" else "Already have an account?"
+                destination = "Sign up" if mode == "Sign in" else "Sign in"
+            left, right = st.columns([1.5, 1], vertical_alignment="center")
+            with left:
+                st.markdown('<div class="auth-foot">' + footer + "</div>", unsafe_allow_html=True)
+            with right:
+                with st.container(key="auth_switch"):
+                    if st.button(destination, key="switch_auth_mode", use_container_width=True):
+                        st.session_state.auth_mode = destination
+                        st.query_params.clear()
+                        st.rerun()
+    st.stop()
+
+
 # ------------------------------------------------------------------- dashboard
 def load():
     d = {"armed": True, "camera": 0, "guardian": "Parent", "phone": "",
@@ -258,6 +588,23 @@ with head_title:
 st.caption("Live dashboard. Monitoring runs in monitor.py, so alerts keep working even if this page is closed.")
 
 with st.sidebar:
+    st.caption("Signed in as " + st.session_state.get("user_name", "Google user"))
+    if st.button("Sign out"):
+        if supabase_session:
+            try:
+                supabase.auth.sign_out()
+            except AuthApiError as error:
+                st.error("Could not sign out: " + error.message)
+                st.stop()
+            except httpx.HTTPError:
+                st.error("Could not connect to Supabase to sign out.")
+                st.stop()
+        st.session_state.authenticated = False
+        st.session_state.pop("user_name", None)
+        if getattr(st.user, "is_logged_in", False):
+            st.logout()
+        st.session_state.started = True
+        st.rerun()
     if st.button("Back to home"):
         st.session_state.started = False
         st.rerun()

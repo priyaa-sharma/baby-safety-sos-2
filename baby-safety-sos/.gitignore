@@ -1,6 +1,8 @@
 .env
+.streamlit/secrets.toml
 alerts/
 settings.json
+users.db
 
 runs/
 datasets/*
