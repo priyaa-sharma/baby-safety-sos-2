@@ -84,7 +84,9 @@ if oauth_error:
 oauth_code = st.query_params.get("code")
 if oauth_code:
     try:
-        oauth_response = supabase.auth.exchange_code_for_session(oauth_code)
+        oauth_response = supabase.auth.exchange_code_for_session(
+            {"auth_code": oauth_code}
+        )
     except AuthApiError as error:
         oauth_error = "Google sign-in failed: " + error.message
         st.query_params.clear()
