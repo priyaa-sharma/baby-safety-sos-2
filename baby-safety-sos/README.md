@@ -1,19 +1,18 @@
 # Baby Safety SOS
 
-An experimental AI/ML safety assistant that can monitor a browser camera and microphone while its WebRTC session is running. It can detect selected hazards and sustained crying, then attempt to send an alert.
+An AI/ML safety assistant for babies who are left alone. A camera watches the baby, and if the baby picks up a medicine strip or razor, or cries for a sustained time, the guardian gets an alert on their phone automatically. No button needs to be pressed.
 
 This is a safety assist, not a replacement for adult supervision. It will sometimes miss things and sometimes raise false alarms.
 
 ## Features
 
-- **Browser monitoring.** `app.py` requests camera and (when enabled) microphone access and processes their live streams on the app server. Monitoring stops when the WebRTC session stops.
-- **Local camera fallback.** `monitor.py` is a separate local-camera watcher and remains available if browser monitoring is unsuitable.
+- **Always-on camera monitoring.** Runs continuously in the background, with no browser needed.
 - **Hazard detection.** YOLOv8 detects scissors, knives and forks using COCO weights, plus medicine strips and razors using the custom-trained model when available.
 - **"Holding" logic.** YOLOv8-pose finds the wrists, and an alert is raised only when a hand is close to a hazard. An object lying on a table does not trigger it.
 - **Sustained-hold rule.** The hazard must stay in hand for a set time (default 1.5 s) before an alert is sent, which reduces false alarms.
 - **Cry detection.** A pretrained audio model (AST, trained on AudioSet) listens through the microphone and alerts when crying lasts for several seconds.
 - **Instant alerts.** A Telegram message with a snapshot photo, plus an optional Telegram voice call and an optional ntfy push notification.
-- **Live dashboard.** A Streamlit page with the WebRTC feed, status cards, alert history and adjustable settings.
+- **Live dashboard.** A pastel pink Streamlit page with the live feed, status cards, alert history and adjustable settings.
 - **Account sign-in.** Email/password and Google sign-in use Supabase Auth. Email confirmation and Google provider settings must be configured in Supabase.
 - **Alert cooldowns.** Prevents the guardian from being flooded with repeated alerts.
 - **Custom training pipeline.** `train.py` fine-tunes YOLOv8 on your own hazard dataset and reports precision, recall, mAP and latency.
@@ -30,18 +29,17 @@ Microphone --> AST audio classifier --> cry score
            --> must stay above threshold for N seconds --> alert
 ```
 
-The system has two monitoring options:
+The system has two programs that run separately:
 
-- `app.py` runs browser monitoring in the signed-in session. Click **START** in the WebRTC component and grant browser permissions. Processing and model inference run on the Streamlit app server; monitoring does not continue after the stream or page stops.
-- `monitor.py` is the separate local camera watcher. It uses a camera attached to the computer running the script and can keep working when the dashboard is closed. It is not the camera source for the deployed app.
+- `monitor.py` is the always-on watcher. It reads the camera and microphone and sends alerts. It keeps working even if the dashboard is closed.
+- `app.py` is the dashboard. It only shows the live view and changes settings. Settings are saved to `settings.json`, and the monitor picks up changes within a couple of seconds.
 
 ## Project structure
 
 ```
 baby-safety-sos/
-  monitor.py          Separate local camera monitor
-  app.py              Streamlit dashboard and browser WebRTC monitor
-  cloud_monitor.py    Per-session browser video/audio processing
+  monitor.py          Always-on monitor (camera + cry detection + alerts)
+  app.py              Streamlit dashboard (pastel pink theme)
   detector.py         Hazard detection + "holding" logic (YOLOv8 + YOLOv8-pose)
   cry_detector.py     Cry detection from the microphone (AST audio model)
   alerts.py           Telegram / Telegram call / ntfy alerts + alert history log
@@ -70,13 +68,14 @@ https://github.com/user-attachments/assets/def24c4a-6465-4ee7-a881-c90ed1ed0c00
 
 ## Setup
 
-Requires Python 3.10 or newer. Browser monitoring needs a browser-accessible camera, and a microphone if cry detection is enabled.
+Requires Python 3.10 or newer and a webcam. A microphone is needed for cry detection.
 
 ```
 pip install -r requirements.txt
+pip install sounddevice transformers
 ```
 
-The first run downloads YOLO weights and the audio model, so it needs internet and can take several minutes. On Streamlit Cloud, model downloads and inference use the app server's resources.
+The first run downloads the YOLO weights and the audio model (a few hundred MB), so it needs internet and takes a few minutes once.
 
 ### Configure alerts (`.env`)
 
@@ -157,26 +156,18 @@ server_metadata_url = "https://accounts.google.com/.well-known/openid-configurat
 
 Generate a unique `cookie_secret` and keep the Google client secret private. The Supabase Google provider is not used by this OIDC flow.
 
-For cloud alerts, add any notification credentials as top-level Streamlit secrets (not inside `[auth]`):
-
-```toml
-TELEGRAM_BOT_TOKEN = "your_bot_token"
-TELEGRAM_CHAT_ID = "your_chat_id"
-CALLMEBOT_USER = "@your_telegram_username"
-NTFY_TOPIC = "your_ntfy_topic"
-```
-
 ## Run
 
-For browser monitoring, run the Streamlit app and click **START** in its WebRTC panel:
+Open two terminals in the project folder.
 
 ```
-python -m streamlit run app.py
+python monitor.py                    # always-on monitor
+python -m streamlit run app.py       # dashboard (optional)
 ```
 
-For the separate local camera watcher, run `python monitor.py` in another terminal. On Windows, `start_monitor.bat` restarts that local watcher if it crashes.
+On Windows, you can run `start_monitor.bat` instead of `python monitor.py`. It restarts the monitor automatically if it crashes. To start it when the computer turns on, press Win+R, type `shell:startup`, and put a shortcut to `start_monitor.bat` in that folder.
 
-Restart the app after changing `.env` or Streamlit secrets.
+Both programs read `.env` only at startup, so restart them after changing it.
 
 For continuous use, keep the computer plugged in, turn off sleep, and point the camera at the baby's area.
 
@@ -184,12 +175,12 @@ For continuous use, keep the computer plugged in, turn off sleep, and point the 
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Camera index | 0 | Camera used by the separate local `monitor.py` watcher |
+| Camera index | 0 | Which camera to use. Try 1 if 0 does not work |
 | Confidence threshold | 0.30 | Minimum certainty for an object detection |
 | Hand-to-object distance | 80 px | How close a wrist must be to count as holding |
 | Hold time before alert | 1.5 s | How long the hazard must stay in hand |
 | Cooldown between alerts | 60 s | Minimum gap between hazard alerts |
-| Listen for crying | on | Turns browser microphone cry detection on or off |
+| Listen for crying | on | Turns cry detection on or off |
 | Cry sensitivity threshold | 0.35 | Cry score needed to count as crying |
 | Crying must last | 6 s | How long crying must continue before an alert |
 | Cry alert cooldown | 120 s | Minimum gap between cry alerts |
@@ -237,21 +228,20 @@ The custom detector is trained to recognize medicine strips and razors:
 
 ## Privacy
 
-In browser mode, live video and enabled microphone audio are transmitted to the Streamlit app server for inference while the WebRTC session is active. The app does not intentionally save the raw stream; alert snapshots and alert history may be saved by the app server and sent through any configured notification channel. Stop the WebRTC session to end streaming. In local `monitor.py` mode, camera frames are processed on the computer running that script. Review Streamlit Cloud's data handling and configure notification secrets before using real footage.
+Video and audio are processed on your own computer and are never uploaded. The only data saved is the alert snapshot photo and a CSV log of alerts in the `alerts/` folder, and the snapshot is sent to your own Telegram chat when an alert fires.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Browser stream does not start | Click **START**, grant camera and microphone permissions, and use HTTPS. Some networks block WebRTC; try another network |
-| Browser stream starts but video processing fails | Read the displayed error; model downloads or CPU/memory limits on the app server may prevent inference |
-| Local monitor cannot read camera | Set the camera index to 0, and close other programs using the camera |
+| Dashboard says "Monitor not running" | Start `python monitor.py` in a separate terminal, from the same project folder |
+| "Cannot read camera" | Set the camera index to 0, and close other programs using the camera |
 | `requirements.txt` not found | Move into the project folder (`cd baby-safety-sos`). The files may be one folder deeper after extracting a zip |
 | Video lags | Lower the number of programs using the CPU, and keep the object-detection image size small |
 | No Telegram message | Check the token and chat ID, and make sure you pressed Start on the bot. Restart after editing `.env` |
 | Call does not ring | Check that you authorized @CallMeBot_txtbot and that your username has one `@`. "FLOOD" errors come from the service being busy, so try again later |
-| Cry card shows "unavailable" | Check that browser microphone access is allowed and that the app server can download and run the Transformers audio model |
+| Cry card shows "unavailable" | Run `pip install sounddevice transformers`, and allow microphone access in Windows privacy settings |
 
 ## Tech stack
 
-Python, Ultralytics YOLOv8 (detection and pose), OpenCV, PyTorch, Hugging Face Transformers (AST audio classifier), SciPy, Streamlit, streamlit-webrtc, Telegram Bot API, CallMeBot, ntfy.
+Python, Ultralytics YOLOv8 (detection and pose), OpenCV, PyTorch, Hugging Face Transformers (AST audio classifier), sounddevice, Streamlit, Telegram Bot API, CallMeBot, ntfy.

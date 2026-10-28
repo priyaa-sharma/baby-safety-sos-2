@@ -1,12 +1,9 @@
-streamlit>=1.51
+streamlit>=1.42
 Authlib>=1.3.2
-streamlit-webrtc>=0.63,<1
 ultralytics>=8.3
 opencv-python>=4.9
 numpy
-scipy
 pandas
 twilio
 python-dotenv
 supabase
-transformers>=4.37,<5
