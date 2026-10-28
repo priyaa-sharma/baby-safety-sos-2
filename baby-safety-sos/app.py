@@ -96,35 +96,6 @@ if "supabase_client" not in st.session_state:
     st.session_state.supabase_client = create_supabase_client()
 supabase = st.session_state.supabase_client
 
-oauth_error = st.query_params.get("error_description")
-if oauth_error:
-    st.query_params.clear()
-oauth_code = st.query_params.get("code")
-if oauth_code:
-    try:
-        oauth_response = supabase.auth.exchange_code_for_session(
-            {"auth_code": oauth_code}
-        )
-    except AuthApiError as error:
-        oauth_error = "Google sign-in failed: " + error.message
-        st.query_params.clear()
-    except httpx.HTTPError:
-        oauth_error = "Could not connect to Supabase to finish Google sign-in."
-        st.query_params.clear()
-    else:
-        if oauth_response.session:
-            st.query_params.clear()
-            st.session_state.authenticated = True
-            st.session_state.started = True
-            metadata = getattr(oauth_response.user, "user_metadata", {}) or {}
-            st.session_state.user_name = metadata.get(
-                "name", getattr(oauth_response.user, "email", "Google user")
-            )
-            st.rerun()
-        else:
-            oauth_error = "Supabase did not return a session for Google sign-in."
-            st.query_params.clear()
-
 session_error = None
 try:
     supabase_session = supabase.auth.get_session()
@@ -143,7 +114,10 @@ if supabase_session:
     )
 elif google_authenticated:
     st.session_state.authenticated = True
-    st.session_state.user_name = getattr(st.user, "name", "Google user")
+    st.session_state.started = True
+    st.session_state.user_name = getattr(st.user, "name", None) or getattr(
+        st.user, "email", "Google user"
+    )
 else:
     st.session_state.authenticated = False
     st.session_state.pop("user_name", None)
@@ -430,8 +404,6 @@ if not st.session_state.authenticated:
                 st.session_state.auth_notice = ""
             if session_error:
                 st.error(session_error)
-            if oauth_error:
-                st.error(oauth_error)
 
             if mode == "Reset password" and not password_reset_token_valid(reset_token):
                 st.error("This reset link has expired or was already used. Request a new one.")
@@ -575,21 +547,8 @@ if not st.session_state.authenticated:
                                 st.rerun()
                 st.markdown('<div class="auth-divider">or</div>', unsafe_allow_html=True)
                 with st.container(key="google_auth"):
-                    try:
-                        google_oauth = supabase.auth.sign_in_with_oauth({
-                            "provider": "google",
-                            "options": {"redirect_to": get_auth_redirect_url()},
-                        })
-                    except AuthApiError as error:
-                        st.error("Could not start Google sign-in: " + error.message)
-                    except httpx.HTTPError:
-                        st.error("Could not connect to Supabase to start Google sign-in.")
-                    else:
-                        st.link_button(
-                            "Continue with Google",
-                            google_oauth.url,
-                            use_container_width=True,
-                        )
+                    if st.button("Continue with Google", use_container_width=True):
+                        st.login()
 
             st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
             if mode != "Sign in" and mode != "Sign up":

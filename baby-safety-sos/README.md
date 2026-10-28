@@ -135,7 +135,26 @@ SUPABASE_AUTH_REDIRECT_URL=http://localhost:8501
 
 In the Supabase dashboard, open **Authentication → URL Configuration** and add that exact URL to **Redirect URLs**. For deployment, use the app's public URL for both the environment variable and the allowed redirect URL. Request a fresh confirmation email after changing the redirect; old or already-used links may have expired.
 
-To enable the **Continue with Google** button, configure Google as a provider in **Supabase → Authentication → Sign In / Providers** and add the Supabase callback URL shown there to the authorized redirect URIs in Google Cloud Console. The app returns from Supabase to `SUPABASE_AUTH_REDIRECT_URL`.
+Google sign-in uses Streamlit's built-in OpenID Connect authentication; email/password accounts continue to use Supabase. In Google Cloud Console, add the app's OIDC callback URL to the OAuth client's authorized redirect URIs:
+
+```
+https://YOUR-APP.streamlit.app/oauth2callback
+```
+
+In Streamlit Cloud, add the following to **Manage app → Settings → Secrets**, replacing the placeholders with your deployed app URL and Google OAuth client credentials:
+
+```toml
+SUPABASE_AUTH_REDIRECT_URL = "https://YOUR-APP.streamlit.app"
+
+[auth]
+redirect_uri = "https://YOUR-APP.streamlit.app/oauth2callback"
+cookie_secret = "A_LONG_RANDOM_SECRET"
+client_id = "YOUR_GOOGLE_CLIENT_ID"
+client_secret = "YOUR_GOOGLE_CLIENT_SECRET"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
+```
+
+Generate a unique `cookie_secret` and keep the Google client secret private. The Supabase Google provider is not used by this OIDC flow.
 
 ## Run
 
