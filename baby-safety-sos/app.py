@@ -325,7 +325,9 @@ if not st.session_state.authenticated:
     [data-testid="stTextInput"] input::placeholder {color:#000 !important; opacity:1;}
     [data-testid="stTextInput"] input:focus {border-color:#6f9476; box-shadow:0 0 0 1px #6f9476;}
     [data-testid="stFormSubmitButton"] button {background:#4CBB17; color:#fff; border:0;
-       border-radius:999px; min-height:44px; font-weight:700;}
+       border-radius:999px; min-height:44px; font-weight:700; display:flex;
+       align-items:center; justify-content:center;}
+    [data-testid="stFormSubmitButton"] button p {margin:0; line-height:1;}
     [data-testid="stFormSubmitButton"] button:hover {background:#48872B; color:#fff;}
     .st-key-google_auth button {background:#fff; color:#000; border:1px solid #e2e6e1;
        border-radius:12px; min-height:44px;}
