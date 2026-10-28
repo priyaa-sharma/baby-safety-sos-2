@@ -16,11 +16,10 @@ from auth import (
     send_password_reset_email,
 )
 from alerts import send_sos, LOG
+from cloud_monitor import BrowserMonitor
 from src.supabase_client import create_supabase_client
 
 SETTINGS = "settings.json"
-LIVE = "alerts/live.jpg"
-STATUS = "alerts/status.json"
 
 
 def get_auth_redirect_url():
@@ -251,7 +250,7 @@ if not st.session_state.started:
           <p>Point the camera at the baby's play area and start the monitor.</p></div></div>
         <div class="step rv"><div class="num">2</div><div>
           <h4>The AI watches and listens</h4>
-          <p>Every frame is checked for hazards and the microphone listens for crying, all on your own computer.</p></div></div>
+          <p>While the browser monitor is running, camera and (if enabled) microphone streams are sent to the app server for AI processing.</p></div></div>
         <div class="step rv"><div class="num">3</div><div>
           <h4>You get an alert</h4>
           <p>If something looks dangerous, your phone gets a message with a photo within seconds.</p></div></div>
@@ -293,8 +292,9 @@ if not st.session_state.started:
     </script>
     """, height=560)
 
-    st.markdown("""<div class="note">Baby Safety SOS is a safety assistant and not a replacement for adult
-        supervision. Video and audio are processed on your own device and are never uploaded.</div>""",
+    st.markdown("""<div class="note">Baby Safety SOS is experimental and is not a replacement for adult
+        supervision. When browser monitoring is started, live video and enabled microphone audio are
+        sent to the app server for processing. Stop the browser monitor to end the stream.</div>""",
                 unsafe_allow_html=True)
     st.markdown("<div style='text-align:center; margin:18px 0 40px 0; color:#4CBB17; font-weight:700; letter-spacing:3px; font-size:15px;'> — PRIYA SHARMA</div>", unsafe_allow_html=True)
     st.stop()
@@ -613,13 +613,26 @@ def show_table(df):
         st.dataframe(df, use_container_width=True, hide_index=True)
 
 
+def configure_alert_channels():
+    for key in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "CALLMEBOT_USER", "NTFY_TOPIC"):
+        if os.getenv(key):
+            continue
+        try:
+            value = st.secrets.get(key)
+        except StreamlitSecretNotFoundError:
+            value = None
+        if value:
+            os.environ[key] = str(value)
+
+
+configure_alert_channels()
 cfg = load()
 head_logo, head_title = st.columns([1, 14], vertical_alignment="center")
 with head_logo:
     show_logo()
 with head_title:
     st.markdown('<h1 style="margin:0;">Baby Safety SOS</h1>', unsafe_allow_html=True)
-st.caption("Live dashboard. Monitoring runs in monitor.py, so alerts keep working even if this page is closed.")
+st.caption("Browser monitoring runs only while this page is open and the WebRTC stream is started.")
 
 with st.sidebar:
     st.caption("Signed in as " + st.session_state.get("user_name", "Google user"))
@@ -643,8 +656,7 @@ with st.sidebar:
         st.session_state.started = False
         st.rerun()
     st.header("Monitor")
-    cfg["armed"] = st.toggle("Camera monitoring ON", value=cfg["armed"])
-    cfg["camera"] = int(st.number_input("Camera index", 0, 5, int(cfg["camera"])))
+    cfg["armed"] = st.toggle("Enable browser monitoring", value=cfg["armed"])
     st.header("Guardian")
     cfg["guardian"] = st.text_input("Name", cfg["guardian"])
     st.header("Hazard detection")
@@ -669,25 +681,58 @@ with open(SETTINGS, "w") as f:
     json.dump(cfg, f)
 
 
+if "browser_monitor" not in st.session_state:
+    st.session_state.browser_monitor = BrowserMonitor()
+monitor = st.session_state.browser_monitor
+monitor.update_config(cfg)
+if not cfg["cry_on"]:
+    monitor.stop_audio()
+
+st.caption("Use START below and allow camera access and, if enabled, microphone access when prompted.")
+st.caption("If you change the cry-detection setting, click START again to restart the media session.")
+if cfg["armed"]:
+    st.warning(
+        "Privacy: live camera data, and microphone data when cry detection is enabled, "
+        "are sent to the app server while the stream is active."
+    )
+    from streamlit_webrtc import webrtc_streamer
+
+    web_rtc = webrtc_streamer(
+        key=f"baby-safety-browser-monitor-{int(cfg['cry_on'])}",
+        media_stream_constraints={"video": True, "audio": bool(cfg["cry_on"])},
+        rtc_configuration={
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        },
+        video_frame_callback=monitor.process_video,
+        audio_frame_callback=monitor.process_audio,
+        on_video_ended=monitor.stop_video,
+        on_audio_ended=monitor.stop_audio,
+        async_processing=True,
+        sendback_audio=False,
+    )
+else:
+    web_rtc = None
+    monitor.stop_audio()
+
+
 @st.fragment(run_every=0.5)
 def live_view():
-    col_feed, col_side = st.columns([3, 2])
-    try:
-        with open(STATUS) as f:
-            s = json.load(f)
-    except Exception:
-        s = {}
+    s = monitor.get_status()
+    stream_playing = bool(web_rtc and web_rtc.state.playing)
     stale = time.time() - s.get("updated", 0) > 6
     state = s.get("state", "")
 
-    if stale:
-        text = "Monitor not running. Start it with: python monitor.py"
+    if not cfg["armed"]:
+        text = "Browser monitoring is disabled"
         danger = True
-    elif state == "paused":
-        text = "Camera monitoring is paused"
+    elif not stream_playing:
+        text = "Waiting for stream. Click START above and allow camera/microphone access."
         danger = False
-    elif state == "camera_error":
-        text = "Cannot read camera. Retrying..."
+    elif state == "video_error":
+        text = "Video processing failed"
+        danger = True
+    elif stale:
+        text = "No recent video frames received"
         danger = True
     elif state in ("holding", "alert_sent"):
         hazard = str(s.get("hazard", "")).replace("_", " ")
@@ -696,26 +741,35 @@ def live_view():
         if state == "alert_sent":
             text = text + " - SOS SENT"
         danger = True
+    elif state == "paused":
+        text = "Camera monitoring is paused"
+        danger = False
     else:
         text = "All clear. Watching..."
         danger = False
 
-    last_alert = s.get("alert_time")
-    if not last_alert:
-        last_alert = "none yet"
     css = "card danger" if danger else "card"
-    html = "<div class='" + css + "'><h3>" + text + "</h3>"
-
+    html = "<div class='" + css + "'><h3>" + text + "</h3></div>"
+    if state == "video_error" and s.get("error"):
+        st.error("Video processing error: " + str(s["error"]))
 
     cry_status = str(s.get("cry_status", "not started"))
     cry_score = float(s.get("cry_score", 0.0))
     cry_thr = float(cfg["cry_thr"])
-    if stale:
-        cry_text, cry_danger = "Cry detection offline", False
+    if not cfg["cry_on"]:
+        cry_text, cry_danger = "Cry detection is off", False
+    elif not stream_playing:
+        cry_text, cry_danger = "Microphone starts with the browser stream", False
     elif cry_status.startswith(("unavailable", "microphone error")):
-        cry_text, cry_danger = "Cry detection: " + cry_status[:120], True
+        cry_text, cry_danger = "Cry detection is unavailable", True
+        st.error(cry_status)
+    elif cry_status.startswith("audio inference error"):
+        cry_text, cry_danger = "Cry audio processing failed", True
+        st.error(cry_status)
     elif cry_status == "off":
         cry_text, cry_danger = "Cry detection is off", False
+    elif cry_status == "stopped":
+        cry_text, cry_danger = "Microphone stream stopped", True
     elif cry_status.startswith("starting"):
         cry_text, cry_danger = "Cry detection loading the audio model...", False
     elif cry_score >= cry_thr:
@@ -723,25 +777,22 @@ def live_view():
     else:
         cry_text, cry_danger = "Listening. No crying", False
     cry_css = "card danger" if cry_danger else "card"
-    cry_html = "<div class='" + cry_css + "'><h3>" + cry_text + "</h3>"
+    cry_html = "<div class='" + cry_css + "'><h3>" + cry_text + "</h3></div>"
     
 
-    with col_feed:
-        if os.path.exists(LIVE) and not stale:
-            with open(LIVE, "rb") as f:
-                st.image(f.read(), caption=str(s.get("ms", 0)) + " ms/frame")
-    with col_side:
-        st.markdown(html, unsafe_allow_html=True)
-        st.markdown(cry_html, unsafe_allow_html=True)
-        st.subheader("Alert history")
-        try:
-            df = pd.read_csv(LOG).iloc[::-1].head(10)
-        except FileNotFoundError:
-            df = None
-        if df is None:
-            st.caption("No alerts yet")
-        else:
-            show_table(df)
+    st.markdown(html, unsafe_allow_html=True)
+    st.markdown(cry_html, unsafe_allow_html=True)
+    if s.get("alert_result"):
+        st.caption("Last alert: " + str(s["alert_result"]))
+    st.subheader("Alert history")
+    try:
+        df = pd.read_csv(LOG).iloc[::-1].head(10)
+    except FileNotFoundError:
+        df = None
+    if df is None:
+        st.caption("No alerts yet")
+    else:
+        show_table(df)
 
 
 live_view()
