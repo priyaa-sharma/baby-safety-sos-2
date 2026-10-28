@@ -315,7 +315,7 @@ if not st.session_state.authenticated:
     .auth-art {margin:28px 0 0; padding:24px; border-radius:28px; background:#edf2eb;
        border:1px solid #e1e9df; text-align:center;}
     .auth-art svg {width:100%; max-width:340px; height:auto;}
-    .st-key-auth_panel {background:#000000; border:1px solid #e8ebe6; border-radius:24px;
+    .st-key-auth_panel {background:#004700; border:1px solid #e8ebe6; border-radius:24px;
        box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
     .st-key-auth_panel h2 {text-align:center; color:#202720; font-size:32px; margin:0 0 4px;}
     .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#7c847d; font-size:14px; margin:0 0 20px;}
