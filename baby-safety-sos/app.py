@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit.errors import StreamlitSecretNotFoundError
 import httpx
 from supabase_auth.errors import AuthApiError
 from auth import (
@@ -20,6 +21,23 @@ from src.supabase_client import create_supabase_client
 SETTINGS = "settings.json"
 LIVE = "alerts/live.jpg"
 STATUS = "alerts/status.json"
+
+
+def get_auth_redirect_url():
+    try:
+        secrets_redirect = st.secrets.get("SUPABASE_AUTH_REDIRECT_URL")
+        secrets_base = st.secrets.get("APP_BASE_URL")
+    except StreamlitSecretNotFoundError:
+        secrets_redirect = None
+        secrets_base = None
+    return (
+        os.getenv("SUPABASE_AUTH_REDIRECT_URL")
+        or secrets_redirect
+        or os.getenv("APP_BASE_URL")
+        or secrets_base
+        or "http://localhost:8501"
+    )
+
 
 LOGO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72"><path d="M32 2 L58 12 V36 C58 54 46 66 32 70 C18 66 6 54 6 36 V12 Z" fill="#4CBB17"/><path d="M32 50 C20 41 17 34 17 29 C17 24 21 21 25 21 C28 21 31 23 32 26 C33 23 36 21 39 21 C43 21 47 24 47 29 C47 34 44 41 32 50 Z" fill="#293325"/></svg>"""
 
@@ -460,10 +478,7 @@ if not st.session_state.authenticated:
                                     "password": password,
                                     "options": {
                                         "data": {"name": name.strip()},
-                                        "email_redirect_to": os.getenv(
-                                            "SUPABASE_AUTH_REDIRECT_URL",
-                                            os.getenv("APP_BASE_URL", "http://localhost:8501"),
-                                        ),
+                                        "email_redirect_to": get_auth_redirect_url(),
                                     },
                                 })
                             except AuthApiError as error:
@@ -561,13 +576,9 @@ if not st.session_state.authenticated:
                 st.markdown('<div class="auth-divider">or</div>', unsafe_allow_html=True)
                 with st.container(key="google_auth"):
                     try:
-                        redirect_url = os.getenv(
-                            "SUPABASE_AUTH_REDIRECT_URL",
-                            os.getenv("APP_BASE_URL", "http://localhost:8501"),
-                        )
                         google_oauth = supabase.auth.sign_in_with_oauth({
                             "provider": "google",
-                            "options": {"redirect_to": redirect_url},
+                            "options": {"redirect_to": get_auth_redirect_url()},
                         })
                     except AuthApiError as error:
                         st.error("Could not start Google sign-in: " + error.message)
