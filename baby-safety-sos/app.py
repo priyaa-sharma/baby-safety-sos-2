@@ -306,16 +306,16 @@ if not st.session_state.authenticated:
     <style>
     [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}
     header[data-testid="stHeader"] {background:transparent;}
-    .stApp {background:#f7f8f5; color:#242a24;}
+    .stApp {background:#1a261a; color:#242a24;}
     [data-testid="stMain"] > div {max-width:1120px; padding-top:2rem;}
     .auth-copy {padding:40px 32px 32px 8px; color:#354238;}
-    .auth-copy .eyebrow {color:#63846b; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;}
-    .auth-copy h1 {color:#1f2922; font-size:42px; line-height:1.15; margin:14px 0;}
-    .auth-copy p {color:#68756b; font-size:16px; line-height:1.7; max-width:440px;}
-    .auth-art {margin:28px 0 0; padding:24px; border-radius:28px; background:#edf2eb;
-       border:1px solid #e1e9df; text-align:center;}
+    .auth-copy .eyebrow {color:#ffffff; font-size:20px; font-weight:900; letter-spacing:2px; text-transform:uppercase;}
+    .auth-copy h1 {color:#4CBB17; font-size:42px; line-height:1.15; margin:14px 0;}
+    .auth-copy p {color:#ffffff; font-size:16px; line-height:1.7; max-width:440px;}
+    .auth-art {margin:25px 0 0; padding:20px; border-radius:22px; background:#1a261a;
+    text-align:left;}
     .auth-art svg {width:100%; max-width:340px; height:auto;}
-    .st-key-auth_panel {background:#202720; border:1px solid #39543e; border-radius:24px;
+    .st-key-auth_panel {background:#39542C; border:1px solid #39543e; border-radius:24px;
        box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
     .st-key-auth_panel h2 {text-align:center; color:#fff; font-size:32px; margin:0 0 4px;}
     .st-key-auth_panel [data-testid="stMarkdownContainer"] p {text-align:center; color:#fff !important; font-size:14px; margin:0 0 20px;}
@@ -324,22 +324,31 @@ if not st.session_state.authenticated:
        min-height:46px; color:#000 !important; -webkit-text-fill-color:#000;}
     [data-testid="stTextInput"] input::placeholder {color:#000 !important; opacity:1;}
     [data-testid="stTextInput"] input:focus {border-color:#6f9476; box-shadow:0 0 0 1px #6f9476;}
+    [data-testid="stTextInput"] button,
+    [data-testid="stTextInput"] button span,
+    [data-testid="stTextInput"] button svg {color:#4CBB17 !important; fill:#4CBB17 !important;}
     [data-testid="stFormSubmitButton"] button {background:#4CBB17; color:#fff; border:0;
        border-radius:999px; min-height:44px; font-weight:700; display:flex;
        align-items:center; justify-content:center;}
-    [data-testid="stFormSubmitButton"] button p {margin:0; line-height:1;}
+    [data-testid="stFormSubmitButton"] button p {margin:0; line-height:1;
+       transform:translateY(2px);}
     [data-testid="stFormSubmitButton"] button:hover {background:#48872B; color:#fff;}
-    .st-key-google_auth button, {background:#fff;
-       color:#202720 !important; -webkit-text-fill-color:#202720; opacity:1;
-       border:1px solid #e2e6e1;
-       border-radius:12px; min-height:44px;}
+    .st-key-google_auth button {background:#fff; color:#202720 !important;
+       -webkit-text-fill-color:#202720; border:1px solid #e2e6e1;
+       border-radius:12px; height:56px; padding:0 1rem;}
     .st-key-google_auth button p {
-    color: #202720 !important;
-    -webkit-text-fill-color: #202720;
-    background: transparent;
-    border: 0;
-    margin: 0;
-}
+       color:#202720 !important; -webkit-text-fill-color:#202720;
+       background:transparent; border:0; border-radius:0; margin:0;
+       font-size:20px; font-weight:700; line-height:1.2;
+    }
+    .st-key-google_auth button p::before {
+       content:"G"; display:inline-block; vertical-align:middle; margin-right:10px;
+       font:500 22px/1 Arial, sans-serif;
+       background:conic-gradient(from -45deg, #4285F4 0 25%, #34A853 25% 50%,
+           #FBBC05 50% 75%, #EA4335 75% 100%);
+       -webkit-background-clip:text; background-clip:text;
+       color:transparent; -webkit-text-fill-color:transparent;
+    }
     .st-key-google_auth button:hover {background:#f7f8f5; color:#000; border-color:#cdd5cc;}
     .st-key-google_auth [data-testid="stLinkButton"] a,
     .st-key-google_auth a[data-testid="stLinkButton"] {background:#fff; color:#000;
@@ -347,12 +356,15 @@ if not st.session_state.authenticated:
     .st-key-google_auth [data-testid="stLinkButton"] a:hover,
     .st-key-google_auth a[data-testid="stLinkButton"]:hover {background:#f7f8f5;
        color:#000; border-color:#cdd5cc;}
+       
     .auth-divider {display:flex; align-items:center; gap:12px; color:#fff;
        font-size:12px; margin:18px 0;}
     .auth-divider:before, .auth-divider:after {content:""; height:1px; background:#ffffff66; flex:1;}
-    .auth-foot {text-align:center; color:#fff; font-size:13px;}
+    .auth-foot {text-align:center; color:#fff; font-family:'Quicksand', sans-serif;
+       font-size:14px; font-weight:400;}
     .st-key-auth_switch button {background:transparent; color:#fff; border:0; padding:0;
-       font-weight:700; min-height:0;}
+       font-weight:700; min-height:0; position:relative; top:10px;}
+    .st-key-auth_switch button p {margin:0; line-height:1;}
     .st-key-auth_switch button:hover {background:transparent; color:#fff; text-decoration:underline;}
     .st-key-forgot_password button {background:transparent; color:#fff; border:0; padding:0;
        font-size:12px; min-height:0;}
@@ -374,18 +386,18 @@ if not st.session_state.authenticated:
     with intro:
         st.markdown("""
         <div class="auth-copy">
-          <div class="eyebrow">Baby Safety SOS</div>
+          <div class="eyebrow">Baby Safety <span style="color:#4CBB17;">SOS</span></div>
           <h1>A little more peace of mind.</h1>
           <p>Sign in to keep an eye on what matters most. Your camera and microphone are
           processed on your own computer, never uploaded.</p>
           <div class="auth-art">
             <svg viewBox="0 0 360 250" role="img" aria-label="Illustration of a protected baby">
-              <circle cx="180" cy="126" r="104" fill="#dfeadd"/>
-              <path d="M180 31l62 23v55c0 49-29 83-62 99-33-16-62-50-62-99V54z" fill="#709678"/>
-              <path d="M180 176c-31-23-44-39-44-57 0-13 9-22 22-22 10 0 18 5 22 14 4-9 12-14 22-14 13 0 22 9 22 22 0 18-13 34-44 57z" fill="#f7f8f5"/>
-              <circle cx="74" cy="65" r="8" fill="#d5aa72"/><circle cx="291" cy="179" r="11" fill="#d5aa72"/>
-              <path d="M54 177c13-13 26-13 39 0M271 66c12-12 24-12 36 0" fill="none" stroke="#b3c9b2" stroke-width="5" stroke-linecap="round"/>
-              <circle cx="91" cy="124" r="4" fill="#709678"/><circle cx="278" cy="112" r="4" fill="#709678"/>
+              <circle cx="180" cy="126" r="104" fill="#39542C"/>
+              <path d="M180 31l62 23v55c0 49-29 83-62 99-33-16-62-50-62-99V54z" fill="#4CBB17"/>
+              <path d="M180 176c-31-23-44-39-44-57 0-13 9-22 22-22 10 0 18 5 22 14 4-9 12-14 22-14 13 0 22 9 22 22 0 18-13 34-44 57z" fill="#39542C"/>
+              <circle cx="74" cy="65" r="8" fill="#39542C"/><circle cx="291" cy="179" r="11" fill="#39542C"/>
+              <path d="M54 177c13-13 26-13 39 0M271 66c12-12 24-12 36 0" fill="none" stroke="#4CBB17" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="91" cy="124" r="4" fill="#4CBB17"/><circle cx="278" cy="112" r="4" fill="#4CBB17"/>
             </svg>
           </div>
         </div>
@@ -558,7 +570,7 @@ if not st.session_state.authenticated:
                                 st.rerun()
                 st.markdown('<div class="auth-divider">or</div>', unsafe_allow_html=True)
                 with st.container(key="google_auth"):
-                    if st.button("Continue with Google", use_container_width=True):
+                    if st.button("Sign in with Google", use_container_width=True):
                         st.login()
 
             st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
