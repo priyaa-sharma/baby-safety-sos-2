@@ -306,7 +306,7 @@ if not st.session_state.authenticated:
     <style>
     [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}
     header[data-testid="stHeader"] {background:transparent;}
-    .stApp {background:#f7f8f5; color:#242a24;}
+    .stApp {background:#edf5eb; color:#242a24;}
     [data-testid="stMain"] > div {max-width:1120px; padding-top:2rem;}
     .auth-copy {padding:40px 32px 32px 8px; color:#354238;}
     .auth-copy .eyebrow {color:#63846b; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;}
