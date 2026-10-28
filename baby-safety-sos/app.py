@@ -318,7 +318,7 @@ if not st.session_state.authenticated:
     .st-key-auth_panel {background:#202720; border:1px solid #39543e; border-radius:24px;
        box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
     .st-key-auth_panel h2 {text-align:center; color:#fff; font-size:32px; margin:0 0 4px;}
-    .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#fff; font-size:14px; margin:0 0 20px;}
+    .st-key-auth_panel [data-testid="stMarkdownContainer"] p {text-align:center; color:#fff !important; font-size:14px; margin:0 0 20px;}
     [data-testid="stTextInput"] label {display:none;}
     [data-testid="stTextInput"] input {background:#fff; border:1px solid #e2e6e1; border-radius:12px;
        min-height:46px; color:#000 !important; -webkit-text-fill-color:#000;}
