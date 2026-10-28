@@ -306,7 +306,7 @@ if not st.session_state.authenticated:
     <style>
     [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}
     header[data-testid="stHeader"] {background:transparent;}
-    .stApp {background:#edf5eb; color:#242a24;}
+    .stApp {background:##293325; color:##EAF3E4;}
     [data-testid="stMain"] > div {max-width:1120px; padding-top:2rem;}
     .auth-copy {padding:40px 32px 32px 8px; color:#354238;}
     .auth-copy .eyebrow {color:#63846b; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;}
@@ -315,7 +315,7 @@ if not st.session_state.authenticated:
     .auth-art {margin:28px 0 0; padding:24px; border-radius:28px; background:#edf2eb;
        border:1px solid #e1e9df; text-align:center;}
     .auth-art svg {width:100%; max-width:340px; height:auto;}
-    .st-key-auth_panel {background:#b8ffb8; border:1px solid #e8ebe6; border-radius:24px;
+    .st-key-auth_panel {background:##4CBB17; border:1px solid ##EAF3E4; border-radius:24px;
        box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
     .st-key-auth_panel h2 {text-align:center; color:#202720; font-size:32px; margin:0 0 4px;}
     .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#7c847d; font-size:14px; margin:0 0 20px;}
