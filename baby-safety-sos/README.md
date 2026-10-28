@@ -13,7 +13,7 @@ This is a safety assist, not a replacement for adult supervision. It will someti
 - **Cry detection.** A pretrained audio model (AST, trained on AudioSet) listens through the microphone and alerts when crying lasts for several seconds.
 - **Instant alerts.** A Telegram message with a snapshot photo, plus an optional Telegram voice call and an optional ntfy push notification.
 - **Live dashboard.** A pastel pink Streamlit page with the live feed, status cards, alert history and adjustable settings.
-- **Local sign-in.** Create an account with an email and password, or sign in with an existing local account. Passwords are stored as salted hashes in a local SQLite database. Google sign-in can be enabled with Streamlit OIDC settings.
+- **Account sign-in.** Email/password and Google sign-in use Supabase Auth. Email confirmation and Google provider settings must be configured in Supabase.
 - **Alert cooldowns.** Prevents the guardian from being flooded with repeated alerts.
 - **Custom training pipeline.** `train.py` fine-tunes YOLOv8 on your own hazard dataset and reports precision, recall, mAP and latency.
 
@@ -117,21 +117,6 @@ APP_BASE_URL=http://localhost:8501
 
 Use an app password if your provider requires one. For a deployed app, set `APP_BASE_URL` to its public HTTPS URL so links open the right site. Email credentials and `.env` must remain private.
 
-### Configure Google sign-in (optional)
-
-Local email and password accounts work without any additional setup. To enable the Google button, configure Streamlit OIDC in `.streamlit/secrets.toml` with your Google OAuth client:
-
-```
-[auth]
-redirect_uri = "http://localhost:8501/oauth2callback"
-cookie_secret = "a-long-random-secret"
-client_id = "your-google-client-id"
-client_secret = "your-google-client-secret"
-server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
-```
-
-Keep the secrets file private and add the matching redirect URI to your Google OAuth client.
-
 ### Supabase Python client
 
 The Supabase client is initialized in `src/supabase_client.py`. Replace `SUPABASE_URL` and `SUPABASE_PUBLIC_KEY` there with your project's URL and publishable key, then import it in Python with:
@@ -149,6 +134,8 @@ SUPABASE_AUTH_REDIRECT_URL=http://localhost:8501
 ```
 
 In the Supabase dashboard, open **Authentication → URL Configuration** and add that exact URL to **Redirect URLs**. For deployment, use the app's public URL for both the environment variable and the allowed redirect URL. Request a fresh confirmation email after changing the redirect; old or already-used links may have expired.
+
+To enable the **Continue with Google** button, configure Google as a provider in **Supabase → Authentication → Sign In / Providers** and add the Supabase callback URL shown there to the authorized redirect URIs in Google Cloud Console. The app returns from Supabase to `SUPABASE_AUTH_REDIRECT_URL`.
 
 ## Run
 

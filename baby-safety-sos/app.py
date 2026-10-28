@@ -6,7 +6,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import httpx
 from supabase_auth.errors import AuthApiError
-from streamlit.errors import StreamlitSecretNotFoundError
 from auth import (
     build_password_reset_url,
     create_password_reset_token,
@@ -78,6 +77,33 @@ if "auth_email" not in st.session_state:
 if "supabase_client" not in st.session_state:
     st.session_state.supabase_client = create_supabase_client()
 supabase = st.session_state.supabase_client
+
+oauth_error = st.query_params.get("error_description")
+if oauth_error:
+    st.query_params.clear()
+oauth_code = st.query_params.get("code")
+if oauth_code:
+    try:
+        oauth_response = supabase.auth.exchange_code_for_session(oauth_code)
+    except AuthApiError as error:
+        oauth_error = "Google sign-in failed: " + error.message
+        st.query_params.clear()
+    except httpx.HTTPError:
+        oauth_error = "Could not connect to Supabase to finish Google sign-in."
+        st.query_params.clear()
+    else:
+        if oauth_response.session:
+            st.query_params.clear()
+            st.session_state.authenticated = True
+            st.session_state.started = True
+            metadata = getattr(oauth_response.user, "user_metadata", {}) or {}
+            st.session_state.user_name = metadata.get(
+                "name", getattr(oauth_response.user, "email", "Google user")
+            )
+            st.rerun()
+        else:
+            oauth_error = "Supabase did not return a session for Google sign-in."
+            st.query_params.clear()
 
 session_error = None
 try:
@@ -310,6 +336,12 @@ if not st.session_state.authenticated:
     .st-key-google_auth button {background:#fff; color:#000; border:1px solid #e2e6e1;
        border-radius:12px; min-height:44px;}
     .st-key-google_auth button:hover {background:#f7f8f5; color:#000; border-color:#cdd5cc;}
+    .st-key-google_auth [data-testid="stLinkButton"] a,
+    .st-key-google_auth a[data-testid="stLinkButton"] {background:#fff; color:#000;
+       border:1px solid #e2e6e1; border-radius:12px; min-height:44px; text-decoration:none;}
+    .st-key-google_auth [data-testid="stLinkButton"] a:hover,
+    .st-key-google_auth a[data-testid="stLinkButton"]:hover {background:#f7f8f5;
+       color:#000; border-color:#cdd5cc;}
     .auth-divider {display:flex; align-items:center; gap:12px; color:#929991;
        font-size:12px; margin:18px 0;}
     .auth-divider:before, .auth-divider:after {content:""; height:1px; background:#e8ebe6; flex:1;}
@@ -378,6 +410,8 @@ if not st.session_state.authenticated:
                 st.session_state.auth_notice = ""
             if session_error:
                 st.error(session_error)
+            if oauth_error:
+                st.error(oauth_error)
 
             if mode == "Reset password" and not password_reset_token_valid(reset_token):
                 st.error("This reset link has expired or was already used. Request a new one.")
@@ -524,20 +558,25 @@ if not st.session_state.authenticated:
                                 st.rerun()
                 st.markdown('<div class="auth-divider">or</div>', unsafe_allow_html=True)
                 with st.container(key="google_auth"):
-                    if st.button("Continue with Google", use_container_width=True):
-                        try:
-                            auth_settings = st.secrets["auth"]
-                            required = ("redirect_uri", "cookie_secret", "client_id",
-                                        "client_secret", "server_metadata_url")
-                            if all(auth_settings.get(key) for key in required):
-                                st.login()
-                            else:
-                                st.info("Google sign-in needs OIDC settings in .streamlit/secrets.toml.")
-                        except (StreamlitSecretNotFoundError, KeyError):
-                            st.info(
-                                "Google sign-in is not configured yet. Add your Google OIDC settings "
-                                "to .streamlit/secrets.toml to enable it."
-                            )
+                    try:
+                        redirect_url = os.getenv(
+                            "SUPABASE_AUTH_REDIRECT_URL",
+                            os.getenv("APP_BASE_URL", "http://localhost:8501"),
+                        )
+                        google_oauth = supabase.auth.sign_in_with_oauth({
+                            "provider": "google",
+                            "options": {"redirect_to": redirect_url},
+                        })
+                    except AuthApiError as error:
+                        st.error("Could not start Google sign-in: " + error.message)
+                    except httpx.HTTPError:
+                        st.error("Could not connect to Supabase to start Google sign-in.")
+                    else:
+                        st.link_button(
+                            "Continue with Google",
+                            google_oauth.url,
+                            use_container_width=True,
+                        )
 
             st.markdown('<div class="auth-divider"></div>', unsafe_allow_html=True)
             if mode != "Sign in" and mode != "Sign up":
