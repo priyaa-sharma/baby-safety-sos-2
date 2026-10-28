@@ -315,18 +315,18 @@ if not st.session_state.authenticated:
     .auth-art {margin:28px 0 0; padding:24px; border-radius:28px; background:#edf2eb;
        border:1px solid #e1e9df; text-align:center;}
     .auth-art svg {width:100%; max-width:340px; height:auto;}
-    .st-key-auth_panel {background:#92cf82; border:1px solid #e8ebe6; border-radius:24px;
+    .st-key-auth_panel {background:#202720; border:1px solid #39543e; border-radius:24px;
        box-shadow:0 18px 55px rgba(37,54,39,.08); padding:32px 36px 26px;}
-    .st-key-auth_panel h2 {text-align:center; color:#202720; font-size:32px; margin:0 0 4px;}
-    .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#7c847d; font-size:14px; margin:0 0 20px;}
+    .st-key-auth_panel h2 {text-align:center; color:#fff; font-size:32px; margin:0 0 4px;}
+    .st-key-auth_panel > [data-testid="stMarkdownContainer"] > p {text-align:center; color:#fff; font-size:14px; margin:0 0 20px;}
     [data-testid="stTextInput"] label {display:none;}
     [data-testid="stTextInput"] input {background:#fff; border:1px solid #e2e6e1; border-radius:12px;
        min-height:46px; color:#000 !important; -webkit-text-fill-color:#000;}
     [data-testid="stTextInput"] input::placeholder {color:#000 !important; opacity:1;}
     [data-testid="stTextInput"] input:focus {border-color:#6f9476; box-shadow:0 0 0 1px #6f9476;}
-    [data-testid="stFormSubmitButton"] button {background:#202720; color:#fff; border:0;
+    [data-testid="stFormSubmitButton"] button {background:#4CBB17; color:#fff; border:0;
        border-radius:999px; min-height:44px; font-weight:700;}
-    [data-testid="stFormSubmitButton"] button:hover {background:#354638; color:#fff;}
+    [data-testid="stFormSubmitButton"] button:hover {background:#48872B; color:#fff;}
     .st-key-google_auth button {background:#fff; color:#000; border:1px solid #e2e6e1;
        border-radius:12px; min-height:44px;}
     .st-key-google_auth button:hover {background:#f7f8f5; color:#000; border-color:#cdd5cc;}
@@ -336,19 +336,19 @@ if not st.session_state.authenticated:
     .st-key-google_auth [data-testid="stLinkButton"] a:hover,
     .st-key-google_auth a[data-testid="stLinkButton"]:hover {background:#f7f8f5;
        color:#000; border-color:#cdd5cc;}
-    .auth-divider {display:flex; align-items:center; gap:12px; color:#929991;
+    .auth-divider {display:flex; align-items:center; gap:12px; color:#fff;
        font-size:12px; margin:18px 0;}
-    .auth-divider:before, .auth-divider:after {content:""; height:1px; background:#e8ebe6; flex:1;}
-    .auth-foot {text-align:center; color:#737c74; font-size:13px;}
-    .st-key-auth_switch button {background:transparent; color:#000; border:0; padding:0;
+    .auth-divider:before, .auth-divider:after {content:""; height:1px; background:#ffffff66; flex:1;}
+    .auth-foot {text-align:center; color:#fff; font-size:13px;}
+    .st-key-auth_switch button {background:transparent; color:#fff; border:0; padding:0;
        font-weight:700; min-height:0;}
-    .st-key-auth_switch button:hover {background:transparent; color:#000; text-decoration:underline;}
-    .st-key-forgot_password button {background:transparent; color:#000; border:0; padding:0;
+    .st-key-auth_switch button:hover {background:transparent; color:#fff; text-decoration:underline;}
+    .st-key-forgot_password button {background:transparent; color:#fff; border:0; padding:0;
        font-size:12px; min-height:0;}
-    .st-key-forgot_password button:hover {background:transparent; color:#000; text-decoration:underline;}
-    .st-key-back_to_login button {background:transparent; color:#000; border:0; padding:0;
+    .st-key-forgot_password button:hover {background:transparent; color:#fff; text-decoration:underline;}
+    .st-key-back_to_login button {background:transparent; color:#fff; border:0; padding:0;
        font-weight:700; min-height:0;}
-    .st-key-back_to_login button:hover {background:transparent; color:#000; text-decoration:underline;}
+    .st-key-back_to_login button:hover {background:transparent; color:#fff; text-decoration:underline;}
     @media (max-width:760px) {
       [data-testid="stMain"] > div {padding:1rem 1rem 2rem;}
       .auth-copy {padding:4px 8px 8px;}
