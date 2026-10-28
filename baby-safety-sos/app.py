@@ -329,7 +329,9 @@ if not st.session_state.authenticated:
        align-items:center; justify-content:center;}
     [data-testid="stFormSubmitButton"] button p {margin:0; line-height:1;}
     [data-testid="stFormSubmitButton"] button:hover {background:#48872B; color:#fff;}
-    .st-key-google_auth button {background:#fff; color:#000; border:1px solid #e2e6e1;
+    .st-key-google_auth button, .st-key-google_auth button p {background:#fff;
+       color:#202720 !important; -webkit-text-fill-color:#202720; opacity:1;
+       border:1px solid #e2e6e1;
        border-radius:12px; min-height:44px;}
     .st-key-google_auth button:hover {background:#f7f8f5; color:#000; border-color:#cdd5cc;}
     .st-key-google_auth [data-testid="stLinkButton"] a,
