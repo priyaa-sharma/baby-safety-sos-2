@@ -109,6 +109,7 @@ except httpx.HTTPError:
 google_authenticated = getattr(st.user, "is_logged_in", False)
 if supabase_session:
     st.session_state.authenticated = True
+    st.session_state.started = True
     st.session_state.user_name = getattr(
         getattr(supabase_session, "user", None), "email", "Supabase user"
     )
@@ -130,7 +131,7 @@ if reset_token:
 
 
 # ---------------------------------------------------------------- landing page
-if not st.session_state.started:
+if not st.session_state.started and not st.session_state.authenticated:
     st.markdown("""
     <style>
     [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}

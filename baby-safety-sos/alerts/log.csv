@@ -27,3 +27,7 @@ time,hazard,confidence,status,snapshot
 2026-10-28 00:56:48,razor,0.12,"sent via telegram, telegram call",alerts/snapshots/20261028_005648.jpg
 2026-10-28 01:02:16,razor,0.60,"sent via telegram, telegram call",alerts/snapshots/20261028_010216.jpg
 2026-10-28 01:02:46,razor,0.16,"sent via telegram, telegram call",alerts/snapshots/20261028_010246.jpg
+2026-10-29 20:05:13,razor,0.18,"sent via telegram, telegram call",alerts/snapshots/20261029_200513.jpg
+2026-10-29 20:07:40,razor,0.11,"sent via telegram, telegram call",alerts/snapshots/20261029_200740.jpg
+2026-10-29 21:41:50,razor,0.14,"sent via telegram, telegram call",alerts/snapshots/20261029_214150.jpg
+2026-10-30 10:14:55,razor,0.11,"sent via telegram, telegram call",alerts/snapshots/20261030_101455.jpg
